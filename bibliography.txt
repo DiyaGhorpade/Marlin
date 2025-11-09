@@ -1,0 +1,9 @@
+dataset nomenclature: https://help.marine.copernicus.eu/en/articles/6820094-how-is-the-nomenclature-of-copernicus-marine-data-defined#h_34a5a6f21d
+download dataset: https://data.marine.copernicus.eu/product/GLOBAL_ANALYSISFORECAST_PHY_001_024/download?dataset=cmems_mod_glo_phy_anfc_0.083deg_PT1H-m_202406
+xarray documentation: 
+  1. https://github.com/pydata/xarray/blob/e49cfc4f2009eb660411128eaf05fa3e714a0c83/xarray/core/dataset.py#L26
+  2. https://earth-env-data-science.github.io/lectures/xarray/xarray.html
+  3. https://docs.xarray.dev/en/v2025.06.1/user-guide/terminology.html
+copernicus marine documentation: 
+ 1. https://toolbox-docs.marine.copernicus.eu/en/v2.2.3/response-types.html
+ 2. https://help.marine.copernicus.eu/en/collections/9080063-copernicus-marine-toolbox

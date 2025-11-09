@@ -1,0 +1,29 @@
+# For the Jupyter environment
+jupyterlab
+
+# For data downloading
+copernicusmarine
+
+# For data handling and analysis
+xarray
+numpy
+pandas
+simplejson
+netCDF4
+h5netcdf
+
+# For GPU acceleration (match this to your CUDA 12.3 version if possible)
+cupy-cuda12x
+
+# For plotting
+matplotlib
+cartopy
+
+# For handling credentials
+python-dotenv
+
+# For Kafka (Producer & Consumers)
+kafka-python           # <-- Missing package for the importer
+
+# For PostgreSQL (DB Consumer & Chatbot)
+psycopg2-binary        # <-- Missing package for the database

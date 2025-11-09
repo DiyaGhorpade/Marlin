@@ -1,0 +1,24 @@
+docker build -t marlin . 
+docker run -it --gpus all -p 8888:8888 -v .:/app marlin
+
+for the hostname in the .netrc : auth.marine.copernicus.eu
+
+about .netrc:
+The .netrc file is a plain-text configuration file used primarily on Unix-like operating systems to store login credentials 
+for automated authentication with remote machines, often used by tools like ftp, rexec, curl, and git for HTTP(S) authentication
+
+Marine Gazetteer Placedetails
+MRGID	http://marineregions.org/mrgid/1904
+Status	Proposed standard Proposed standard
+Name	
+Language	Name	Name source
+English	Indian Ocean	(1953). Limits of oceans and seas. 3rd edition. IHO Special Publication, 23. International Hydrographic Organization (IHO): Monaco. 38 pp. (look up in IMIS)   
+PlaceType	IHO Sea Area 
+Latitude	27° 16' 3.5" S (-27.26765°)  
+Longitude	79° 36' 8.7" E (79.60243°)  
+Min. Lat	60° 0' 0" S (-60°)  
+Min. Long	20° 0' 9.4" E (20.0026°)  
+Max. Lat	31° 11' 9.1" N (31.1859°)  
+Max. Long	146° 53' 53.6" E (146.8982°)  
+
+used copernicusmarine login command to obtain a credentials file

@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  # 1. Kafka in KRaft Mode (No Zookeeper!)
+  kafka:
+    image: confluentinc/cp-kafka:7.8.3
+    hostname: kafka
+    container_name: kafka
+    ports:
+      - "9092:9092"   # For your script
+      - "29092:29092" # For external tools
+    environment:
+      KAFKA_KRAFT_MODE: 'true'
+      CLUSTER_ID: zV2fEG-ASeuv0UoTEJv77g # docker run --rm confluentinc/cp-kafka:7.8.3 kafka-storage random-uuid
+      # --- KRaft Settings ---
+      KAFKA_PROCESS_ROLES: broker,controller # Run as combined broker and controller
+      KAFKA_NODE_ID: 1
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka:9093' # Self-reference
+       
+      
+      # --- Listener Settings ---
+      KAFKA_LISTENERS: 'PLAINTEXT://:9092,CONTROLLER://:9093,PLAINTEXT_HOST://:29092'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
+      KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
+      
+      # --- Other Settings ---
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1 # Must be changed in production env
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+    networks:
+      - copernicus-net
+
+  # 2. PostgreSQL
+  postgres:
+    image: postgres:15-alpine
+    hostname: postgres
+    container_name: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - copernicus-net
+
+  # 3. Jupyter Lab Service
+  jupyter-lab:
+    build: .
+    container_name: jupyter-lab
+    ports:
+      - "8888:8888"
+    volumes:
+      - .:/app
+    depends_on:
+      - kafka
+      - postgres
+    networks:
+      - copernicus-net
+    command: /app/start.sh
+
+# Define the shared network
+networks:
+  copernicus-net:
+    driver: bridge
+
+# Define the volume for Postgres to save data
+volumes:
+  postgres-data:
