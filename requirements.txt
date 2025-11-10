@@ -27,3 +27,6 @@ kafka-python           # <-- Missing package for the importer
 
 # For PostgreSQL (DB Consumer & Chatbot)
 psycopg2-binary        # <-- Missing package for the database
+
+# For Dashboard
+streamlit

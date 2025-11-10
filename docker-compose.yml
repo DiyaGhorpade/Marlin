@@ -13,10 +13,10 @@ services:
       KAFKA_KRAFT_MODE: 'true'
       CLUSTER_ID: zV2fEG-ASeuv0UoTEJv77g # docker run --rm confluentinc/cp-kafka:7.8.3 kafka-storage random-uuid
       # --- KRaft Settings ---
-      KAFKA_PROCESS_ROLES: broker,controller # Run as combined broker and controller
+      KAFKA_PROCESS_ROLES: broker,controller 
       KAFKA_NODE_ID: 1
       KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
-      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka:9093' # Self-reference
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka:9093'
        
       
       # --- Listener Settings ---
@@ -60,7 +60,7 @@ services:
       - postgres
     networks:
       - copernicus-net
-    command: /app/start.sh
+    command: sh -c "dos2unix /app/start.sh && /app/start.sh"
 
 # Define the shared network
 networks:
