@@ -30,3 +30,8 @@ psycopg2-binary        # <-- Missing package for the database
 
 # For Dashboard
 streamlit
+
+# For downloading fisheries data
+requests
+bs4
+pdfplumber
