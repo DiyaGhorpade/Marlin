@@ -3,12 +3,18 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+
 import Home from "./pages/Home";
 import Chatbot from "./pages/Chatbot";
 import Dashboards from "./pages/Dashboards";
 import Models from "./pages/Models";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+
+// ✅ Import new dashboard pages
+import OceanographicDashboard from "./pages/OceanographicDashboard";
+import FisheriesDashboard from "./pages/FisheriesDashboard";
+import MarineBiodiversityDashboard from "./pages/MarineBiodiversityDashboard";
 
 const queryClient = new QueryClient();
 
@@ -19,12 +25,19 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
+          {/* Main routes */}
           <Route path="/" element={<Home />} />
           <Route path="/chatbot" element={<Chatbot />} />
           <Route path="/dashboards" element={<Dashboards />} />
           <Route path="/models" element={<Models />} />
           <Route path="/auth" element={<Auth />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+
+          {/* ✅ Custom Dashboard Pages */}
+          <Route path="/dashboards/oceanographic" element={<OceanographicDashboard />} />
+          <Route path="/dashboards/fisheries" element={<FisheriesDashboard />} />
+          <Route path="/dashboards/biodiversity" element={<MarineBiodiversityDashboard />} />
+
+          {/* Catch-all route */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

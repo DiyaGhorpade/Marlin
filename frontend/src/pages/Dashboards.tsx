@@ -4,10 +4,13 @@ import DashboardsSection from "@/components/DashboardsSection";
 const Dashboards = () => {
   return (
     <div className="min-h-screen bg-background">
+      {/* Top navigation bar */}
       <Navigation />
-      <div className="pt-16">
+
+      {/* Main dashboard selector section */}
+      <main className="pt-24 px-6">
         <DashboardsSection />
-      </div>
+      </main>
     </div>
   );
 };
