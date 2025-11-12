@@ -24,8 +24,6 @@ else
   echo "Warning: Virtual environment not found at /myvenv"
 fi
 
-
-
 # 4. Start the Jupyter server
 echo "Starting Jupyter Lab on port 8888..."
 exec jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.token=''
