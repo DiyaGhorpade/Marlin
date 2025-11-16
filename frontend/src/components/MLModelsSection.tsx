@@ -1,19 +1,21 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Brain, Sparkles, Zap, Database } from "lucide-react";
+import { Brain, Sparkles, Zap, Database, MapPin } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const models = [
   {
-    name: "Species Classification",
-    description: "Advanced neural network for identifying marine species from images with 98.5% accuracy",
-    accuracy: "98.5%",
-    icon: Brain,
-    gradient: "from-primary to-secondary",
+    name: "Species Richness Predictor",
+    description: "Random Forest model predicting biodiversity levels across Indian coastal regions with 91.4% accuracy",
+    accuracy: "91.4%",
+    icon: MapPin,
+    gradient: "from-green-500 to-blue-600",
     metrics: [
-      { label: "Training Data", value: "2.5M images" },
-      { label: "Species", value: "5,000+" },
-      { label: "Processing", value: "< 0.2s" },
+      { label: "Training Data", value: "Indian biodiversity records" },
+      { label: "Coverage", value: "8°-37°N, 68°-97°E" },
+      { label: "R² Score", value: "0.914" }
     ],
+    link: "/species-richness-predictor" 
   },
   {
     name: "Population Forecasting",
@@ -87,9 +89,19 @@ const MLModelsSection = () => {
                     ))}
                   </div>
 
-                  <Button className="w-full bg-gradient-ocean hover:opacity-90">
-                    Explore Model
-                  </Button>
+                  {model.link ? (
+                    // Use Link for Species Richness Predictor
+                    <Link to={model.link}>
+                      <Button className="w-full bg-gradient-ocean hover:opacity-90">
+                        Explore Model
+                      </Button>
+                    </Link>
+                  ) : (
+                    // Regular Button for other models
+                    <Button className="w-full bg-gradient-ocean hover:opacity-90">
+                      Explore Model
+                    </Button>
+                  )}
                 </div>
               </Card>
             );

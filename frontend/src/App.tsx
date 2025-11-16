@@ -10,6 +10,7 @@ import Dashboards from "./pages/Dashboards";
 import Models from "./pages/Models";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import SpeciesRichnessPredictor from './pages/SpeciesRichnessPredictor';
 
 // ✅ Import new dashboard pages
 import OceanographicDashboard from "./pages/OceanographicDashboard";
@@ -36,7 +37,7 @@ const App = () => (
           <Route path="/dashboards/oceanographic" element={<OceanographicDashboard />} />
           <Route path="/dashboards/fisheries" element={<FisheriesDashboard />} />
           <Route path="/dashboards/biodiversity" element={<MarineBiodiversityDashboard />} />
-
+          <Route path="/species-richness-predictor" element={<SpeciesRichnessPredictor />} />
           {/* Catch-all route */}
           <Route path="*" element={<NotFound />} />
         </Routes>
