@@ -1,29 +1,16 @@
 #!/bin/bash
 
-# 1. Wait for Postgres to be ready
-echo "Waiting for PostgreSQL to start..."
-until pg_isready -h postgres -p 5432 -U your_user > /dev/null 2>&1; do
-  echo "Postgres is unavailable - sleeping"
-  sleep 2
-done
-echo "Postgres is up!"
+echo "Activating venv..."
+source /myvenv/bin/activate
 
-# 2. Wait for Kafka to be reachable
-echo "Waiting for Kafka to start..."
-while ! nc -z kafka 9092; do
-  echo "Kafka is unavailable - sleeping"
-  sleep 2
-done
-echo "Kafka is up!"
+echo "Starting orchestrator (will wait for Kafka)..."
+/app/wait-for-kafka.sh \
+  /myvenv/bin/python /app/app/orchestrator.py --domain ocean,fisheries,biodiversity --parallel &
 
-# 3. Activate the virtual environment
-if [ -d "/myvenv" ]; then
-  echo "Activating virtual environment..."
-  source /myvenv/bin/activate
-else
-  echo "Warning: Virtual environment not found at /myvenv"
-fi
-
-# 4. Start the Jupyter server
-echo "Starting Jupyter Lab on port 8888..."
-exec jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.token=''
+echo "Starting Jupyter Lab..."
+exec jupyter lab \
+  --ip=0.0.0.0 \
+  --port=8888 \
+  --no-browser \
+  --allow-root \
+  --NotebookApp.token=''

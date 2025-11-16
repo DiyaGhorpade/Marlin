@@ -22,3 +22,6 @@ Max. Lat	31° 11' 9.1" N (31.1859°)
 Max. Long	146° 53' 53.6" E (146.8982°)  
 
 used copernicusmarine login command to obtain a credentials file
+
+run orchestrator 
+python orchestrator.py --domain ocean,fisheries,biodiversity --parallel

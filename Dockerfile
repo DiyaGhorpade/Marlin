@@ -12,8 +12,7 @@ USER root
 # Set the working directory
 WORKDIR /app
 
-# Mark /app as a volume to be mounted
-VOLUME /app
+# Mount volumes
 VOLUME /data
 
 # Install gnupg
@@ -38,7 +37,7 @@ RUN apt-get update && apt-get install -y \
     postgresql-client \
     tesseract-ocr \
     poppler-utils \
-    dos2unix && \ 
+    dos2unix && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -68,7 +67,16 @@ RUN python3 -m venv /myvenv && \
 EXPOSE 8888
 
 # Copy the start script and make it executable
-COPY start.sh .
+COPY app/ /app/
+
+# Copy scripts
+COPY wait-for-kafka.sh /app/
+COPY wait-for-postgres.sh /app/
+COPY start.sh /app/
+
+
+RUN dos2unix wait-for-kafka.sh && chmod +x wait-for-kafka.sh
+RUN dos2unix wait-for-postgres.sh && chmod +x wait-for-postgres.sh
 RUN dos2unix start.sh && chmod +x start.sh
 
 # Start your application with CMD

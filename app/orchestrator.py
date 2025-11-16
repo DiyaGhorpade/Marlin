@@ -12,7 +12,6 @@ logger = logging.getLogger('orch')
 
 
 def narrate(msg):
-    """Human-friendly narration."""
     print(f"\n👉 {msg}\n")
 
 

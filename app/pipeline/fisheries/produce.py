@@ -41,11 +41,11 @@ def produce(cleaned_jsonl_path):
                 continue
 
             # Validate the DWC row
-            try:
-                validate_dwc(rec)
-            except Exception as e:
-                print("Skipped fisheries record:", e)
-                continue
+            # try:
+            #     validate_dwc(rec)
+            # except Exception as e:
+            #     print("Skipped fisheries record:", e)
+            #     continue
 
             # Send to Kafka
             try:

@@ -9,6 +9,7 @@ services:
     ports:
       - "9092:9092"   # For your script
       - "29092:29092" # For external tools
+      - "9093:9093" # For KRaft Controller
     environment:
       KAFKA_KRAFT_MODE: 'true'
       CLUSTER_ID: zV2fEG-ASeuv0UoTEJv77g # docker run --rm confluentinc/cp-kafka:7.8.3 kafka-storage random-uuid
@@ -62,6 +63,46 @@ services:
     networks:
       - copernicus-net
     command: sh -c "dos2unix /app/start.sh && /app/start.sh"
+
+  consumer-biodiversity:
+    build: .
+    command: ["sh", "-c",
+      "/app/wait-for-postgres.sh \
+       /app/wait-for-kafka.sh \
+       /myvenv/bin/python /app/consumers/consumer_biodiversity.py"
+    ]
+    depends_on:
+      - kafka
+      - postgres
+    networks: [copernicus-net]
+    restart: always
+
+  consumer-fisheries:
+    build: .
+    command: ["sh", "-c",
+      "/app/wait-for-postgres.sh \
+       /app/wait-for-kafka.sh \
+       /myvenv/bin/python /app/consumers/consumer_fisheries.py"
+    ]
+    depends_on:
+      - kafka
+      - postgres
+    networks: [copernicus-net]
+    restart: always
+
+  consumer-ocean:
+    build: .
+    command: ["sh", "-c",
+      "/app/wait-for-postgres.sh \
+       /app/wait-for-kafka.sh \
+       /myvenv/bin/python /app/consumers/consumer_ocean.py"
+    ]
+    depends_on:
+      - kafka
+      - postgres
+    networks: [copernicus-net]
+    restart: always
+
 
 # Define the shared network
 networks:
