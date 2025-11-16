@@ -10,9 +10,11 @@ import Dashboards from "./pages/Dashboards";
 import Models from "./pages/Models";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+//Import ML Model pages 
 import SpeciesRichnessPredictor from './pages/SpeciesRichnessPredictor';
+import OceanPredictor from "./pages/OceanPredictor";
 
-// ✅ Import new dashboard pages
+// Import new dashboard pages
 import OceanographicDashboard from "./pages/OceanographicDashboard";
 import FisheriesDashboard from "./pages/FisheriesDashboard";
 import MarineBiodiversityDashboard from "./pages/MarineBiodiversityDashboard";
@@ -37,7 +39,9 @@ const App = () => (
           <Route path="/dashboards/oceanographic" element={<OceanographicDashboard />} />
           <Route path="/dashboards/fisheries" element={<FisheriesDashboard />} />
           <Route path="/dashboards/biodiversity" element={<MarineBiodiversityDashboard />} />
+          {/*ML Model Pages*/}
           <Route path="/species-richness-predictor" element={<SpeciesRichnessPredictor />} />
+          <Route path="/ocean-predictor" element={<OceanPredictor />} />
           {/* Catch-all route */}
           <Route path="*" element={<NotFound />} />
         </Routes>

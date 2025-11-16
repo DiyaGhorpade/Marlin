@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Brain, Sparkles, Zap, Database, MapPin } from "lucide-react";
+import { Brain, Sparkles, Zap, Database, MapPin, Thermometer } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const models = [
@@ -18,16 +18,16 @@ const models = [
     link: "/species-richness-predictor" 
   },
   {
-    name: "Population Forecasting",
-    description: "Time-series model predicting fish population trends using historical and environmental data",
-    accuracy: "94.2%",
-    icon: Sparkles,
-    gradient: "from-secondary to-accent",
+    name: "Ocean Parameter Predictor",
+    description: "Predicts sea temperature & salinity using Linear Regression",
+    icon: Thermometer,
+    gradient: "from-cyan-500 to-blue-600",
     metrics: [
-      { label: "Forecast Range", value: "6 months" },
-      { label: "Data Points", value: "10M+" },
-      { label: "Update Freq", value: "Daily" },
+
+      { label: "Algorithm", value: "Linear Regression" },
+      { label: "Data Source", value: "Copernicus " },
     ],
+    link: "/ocean-predictor"
   },
   {
     name: "Ecosystem Health Monitor",
@@ -90,14 +90,12 @@ const MLModelsSection = () => {
                   </div>
 
                   {model.link ? (
-                    // Use Link for Species Richness Predictor
                     <Link to={model.link}>
                       <Button className="w-full bg-gradient-ocean hover:opacity-90">
                         Explore Model
                       </Button>
                     </Link>
                   ) : (
-                    // Regular Button for other models
                     <Button className="w-full bg-gradient-ocean hover:opacity-90">
                       Explore Model
                     </Button>
