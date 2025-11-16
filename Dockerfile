@@ -14,6 +14,7 @@ WORKDIR /app
 
 # Mark /app as a volume to be mounted
 VOLUME /app
+VOLUME /data
 
 # Install gnupg
 RUN apt-get update && apt-get install -y \
@@ -35,6 +36,8 @@ RUN apt-get update && apt-get install -y \
     python3-venv \
     python3-dev \
     postgresql-client \
+    tesseract-ocr \
+    poppler-utils \
     dos2unix && \ 
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
@@ -50,6 +53,7 @@ RUN echo "source /myvenv/bin/activate" >> /root/.bashrc
 # Copy requirements
 COPY requirements.txt .
 COPY .env .
+COPY jupyter-settings/ /root/.jupyter/lab/user-settings/
 
 # Ensure pip is compatible with the CUDA version
 RUN curl -sS https://bootstrap.pypa.io/get-pip.py | python3

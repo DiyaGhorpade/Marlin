@@ -23,10 +23,10 @@ cartopy
 python-dotenv
 
 # For Kafka (Producer & Consumers)
-kafka-python           # <-- Missing package for the importer
+kafka-python
 
 # For PostgreSQL (DB Consumer & Chatbot)
-psycopg2-binary        # <-- Missing package for the database
+psycopg2-binary
 
 # For Dashboard
 streamlit
@@ -35,3 +35,6 @@ streamlit
 requests
 bs4
 pdfplumber
+pytesseract 
+pdf2image 
+pillow

@@ -2,75 +2,105 @@ import os
 import re
 import pdfplumber
 import pandas as pd
-import spacy
+from pdf2image import convert_from_path
+import pytesseract
 from pipeline.common.paths import RAW_PATH
 
 DATA_DIR = RAW_PATH("fisheries")
 OUTPUT_FILE = "outputs/textual_data.csv"
 os.makedirs("outputs", exist_ok=True)
 
-# Initialize SpaCy with GPU acceleration
-if spacy.prefer_gpu():
-    print("Using GPU for SpaCy processing")
-    spacy.require_gpu()
-else:
-    print("GPU not detected; falling back to CPU")
 
-
-# Load large English model
-# Disable components you don’t need (speeds up PDF text handling)
-nlp = spacy.load("en_core_web_lg", disable=["parser", "lemmatizer"])
-nlp.max_length = 3_000_000  # handle long documents
-
-# PDF text extraction
+# PDF text extraction (with OCR)
 def extract_text_from_pdf(pdf_path):
     text = ""
+
     with pdfplumber.open(pdf_path) as pdf:
-        for page in pdf.pages:
+        for i, page in enumerate(pdf.pages):
             page_text = page.extract_text()
-            if page_text:
+
+            # If pdfplumber extracted real text → use it
+            if page_text and page_text.strip():
                 text += page_text + "\n"
+                continue
+
+            print(f"  ▸ Page {i+1}: no digital text found → running OCR")
+
+            # Convert this page only to an image
+            images = convert_from_path(
+                pdf_path,
+                dpi=300,
+                first_page=i + 1,
+                last_page=i + 1
+            )
+
+            if images:
+                ocr_text = pytesseract.image_to_string(images[0])
+                text += ocr_text + "\n"
+
     return text
 
 
-# Regex + NLP text cleaning
-def clean_text_with_spacy(text):
-    doc = nlp(text)
-    cleaned = " ".join([t.text for t in doc if not t.is_space])
-    return cleaned
+# Simple text cleaner
+def clean_text(text):
+    return " ".join(text.split())
 
 
+# Parse state landings
 def parse_state_landings(text, year=None):
-    pattern = r"([A-Za-z &]+)\s*Estimated Landings:\s*([\d\.]+)\s*lakh tonnes"
-    matches = re.findall(pattern, text)
+    
+    # India’s maritime states and UTs with landings
+    states = [
+        "Gujarat", "Tamil Nadu", "Kerala", "Karnataka", "Maharashtra",
+        "Andhra Pradesh", "West Bengal", "Odisha", "Goa", "Daman & Diu",
+        "Puducherry", "Andaman and Nicobar Islands", "Andaman & Nicobar Islands"
+    ]
+
+    # Build a dynamic regex
+    state_regex = "|".join([re.escape(s) for s in states])
+
+    pattern = rf"({state_regex})[^0-9]{{0,50}}([\d]+(?:\.\d+)?)[ ]*lakh"
+
+    matches = re.findall(pattern, text, flags=re.IGNORECASE)
+
     records = []
+
     for state, val in matches:
+        state_clean = state.strip().title()  # normalize casing
+
+        try:
+            tonnes_lakh = float(val)
+        except:
+            print(f"  ⚠️ Bad number '{val}' for state '{state_clean}'")
+            continue
+
         records.append({
-            "State/UT": state.strip(),
-            "Estimated Landings (lakh tonnes)": float(val),
-            "Estimated Landings (tonnes)": float(val) * 100000,
+            "State/UT": state_clean,
+            "Estimated Landings (lakh tonnes)": tonnes_lakh,
+            "Estimated Landings (tonnes)": tonnes_lakh * 100000,
             "Year": year
         })
+
     return pd.DataFrame(records)
 
 
-# Main PDF loop
 def process_all_pdfs():
     all_records = []
 
     for file in os.listdir(DATA_DIR):
-        if file.endswith(".pdf"):
+        if file.lower().endswith(".pdf"):
             pdf_path = os.path.join(DATA_DIR, file)
             print(f"Extracting text data from {file} ...")
 
-            # Try to extract year from filename
-            year = next((int(x) for x in file.split("_") if x.isdigit() and len(x) == 4), None)
+            # Extract year (any 4-digit sequence)
+            year = next(
+                (int(x) for x in re.findall(r"\d{4}", file)),
+                None
+            )
 
-            # Extract and clean
             raw_text = extract_text_from_pdf(pdf_path)
-            cleaned_text = clean_text_with_spacy(raw_text)
+            cleaned_text = clean_text(raw_text)
 
-            # Parse structured data
             df = parse_state_landings(cleaned_text, year)
             if not df.empty:
                 all_records.append(df)

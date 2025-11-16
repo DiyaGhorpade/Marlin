@@ -1,0 +1,8 @@
+{
+  "theme": "dark",
+  "fontSize": 15,
+  "fontFamily": "Fira Code, monospace",
+  "cursorBlink": true,
+  "cursorStyle": "block",
+  "scrollback": 50000
+}
