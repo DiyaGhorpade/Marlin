@@ -56,6 +56,9 @@ def merge_cleaned_biodiversity():
 
     return output_file
 
+def merge(files):
+    return merge_cleaned_biodiversity()
 
+    
 if __name__ == "__main__":
     merge_cleaned_biodiversity()

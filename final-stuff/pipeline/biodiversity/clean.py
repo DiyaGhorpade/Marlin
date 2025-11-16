@@ -108,5 +108,9 @@ def run_clean_step():
     print("\n[clean] All datasets cleaned.")
 
 
+def clean(files):
+    return run_clean_step()
+    
+    
 if __name__ == "__main__":
     run_clean_step()

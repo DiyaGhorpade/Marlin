@@ -2,7 +2,7 @@
 import argparse, logging, sys, time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-# Clean, readable logging
+# Crisp logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s | %(levelname)s | %(message)s',
@@ -11,140 +11,157 @@ logging.basicConfig(
 logger = logging.getLogger('orch')
 
 
+def narrate(msg):
+    """Human-friendly narration."""
+    print(f"\n👉 {msg}\n")
+
+
 def run_step(fn, *args, retries=2, name=None):
     """
-    Run a single pipeline step with retries and clean logging.
-
-    fn     : function to run
-    args   : arguments to the function
-    retries: how many times to retry if it fails
-    name   : user-friendly name for logging
+    Wrapper to run pipeline steps with retries and interactive narration.
     """
-
     name = name or getattr(fn, '__name__', str(fn))
+    narrate(f"Starting step: {name}")
 
     for attempt in range(1, retries + 1):
         try:
-            logger.info(f"▶ Running step: {name} (attempt {attempt}/{retries})")
+            logger.info(f"▶ Running {name} (attempt {attempt}/{retries})")
             result = fn(*args)
-            logger.info(f"✔ Completed step: {name}")
+            logger.info(f"✔ Completed {name}")
+            narrate(f"Finished step: {name}")
             return result
 
         except Exception as e:
-            logger.exception(f"❌ Step failed: {name} — {e}")
+            logger.error(f"❌ Error in {name}: {e}")
+
             if attempt < retries:
                 logger.info("⏳ Retrying in 2 seconds…")
                 time.sleep(2)
             else:
+                narrate(f"Step failed permanently: {name}")
                 raise
 
 
 # -----------------------------
-#  OCEAN PIPELINE
+# PIPELINES
 # -----------------------------
 
 def ocean_pipeline():
-    """
-    Full pipeline for ocean data:
-    1. Ingest → NetCDF
-    2. Clean → JSONL
-    3. Produce → Kafka
-    """
-
-    logger.info("\n🌊 ===== Starting OCEAN Pipeline =====")
-
+    narrate("🌊 Starting OCEAN Pipeline")
     from pipeline.ocean import ingest as i, clean as c, produce as p
 
     nc_path = run_step(i.ingest, name='ocean.ingest')
-    logger.info(f"   → Ingested raw NetCDF file: {nc_path}")
+    cleaned = run_step(c.clean, nc_path, name='ocean.clean')
+    run_step(p.produce, cleaned, name='ocean.produce')
 
-    cleaned_path = run_step(c.clean, nc_path, name='ocean.clean')
-    logger.info(f"   → Cleaned JSONL file created: {cleaned_path}")
-
-    run_step(p.produce, cleaned_path, name='ocean.produce')
-    logger.info("   → All cleaned data successfully pushed to Kafka")
-
-    logger.info("🌊 ===== OCEAN Pipeline Completed =====\n")
+    narrate("🌊 OCEAN Pipeline Completed")
 
 
-# ----------------------------------------------------------
-# COMMENTING OUT REMAINING DOMAINS UNTIL THEY ARE READY
-# ----------------------------------------------------------
-
-"""
 def fisheries_pipeline():
-    logger.info("\n🐟 ===== Starting FISHERIES Pipeline =====")
+    narrate("🐟 Starting FISHERIES Pipeline")
     from pipeline.fisheries import ingest as i, clean as c, produce as p
 
     files = run_step(i.ingest, name='fisheries.ingest')
     cleaned = run_step(c.clean, files, name='fisheries.clean')
     run_step(p.produce, cleaned, name='fisheries.produce')
 
-    logger.info("🐟 ===== Fisheries Pipeline Completed =====\n")
+    narrate("🐟 FISHERIES Pipeline Completed")
 
 
 def biodiversity_pipeline():
-    logger.info("\n🧬 ===== Starting BIODIVERSITY Pipeline =====")
-    from pipeline.biodiversity import ingest as i, clean as c, produce as p
+    narrate("🧬 Starting BIODIVERSITY Pipeline")
+    
+    from pipeline.biodiversity import ingest as i, clean as c, merge as m, produce as p
+    
+    files = run_step(i.ingest, name='biodiversity.ingest')
+    cleaned_dir = run_step(c.clean, files, name='biodiversity.clean')
+    merged_jsonl = run_step(m.merge, cleaned_dir, name='biodiversity.merge')
+    run_step(p.produce, merged_jsonl, name='biodiversity.produce')
 
-    files = run_step(i.ingest, name='biodiv.ingest')
-    cleaned = run_step(c.clean, files, name='biodiv.clean')
-    run_step(p.produce, cleaned, name='biodiv.produce')
-
-    logger.info("🧬 ===== Biodiversity Pipeline Completed =====\n")
-"""
+    narrate("🧬 BIODIVERSITY Pipeline Completed")
 
 
-# Only the ocean pipeline is currently active
+# -----------------------------
+# DOMAIN REGISTRATION
+# -----------------------------
+
 DOMAIN_MAP = {
     'ocean': ocean_pipeline,
-    # 'fisheries': fisheries_pipeline,
-    # 'biodiversity': biodiversity_pipeline
+    'fisheries': fisheries_pipeline,
+    'biodiversity': biodiversity_pipeline
 }
 
 
-def run_domains(domains, parallel=False):
-    """
-    Run one or more selected domains, optionally in parallel.
-    For now, only 'ocean' is enabled.
-    """
+# -----------------------------
+# EXECUTION HANDLER
+# -----------------------------
 
-    if parallel:
-        logger.info("Running pipelines in PARALLEL mode")
+def run_domains(domains, parallel=False):
+
+    narrate("🚀 Orchestrator Starting")
+
+    if parallel and len(domains) > 1:
+        narrate("Running all selected domains in PARALLEL mode")
+
         with ThreadPoolExecutor(max_workers=len(domains)) as ex:
             futures = {ex.submit(DOMAIN_MAP[d]): d for d in domains}
+
             for fut in as_completed(futures):
                 d = futures[fut]
                 try:
                     fut.result()
-                    logger.info(f"✔ Domain finished: {d}")
+                    narrate(f"✔ Domain completed: {d}")
                 except Exception as e:
-                    logger.exception(f"❌ Domain {d} failed: {e}")
-    else:
-        for d in domains:
-            logger.info(f"▶ Starting domain: {d}")
-            DOMAIN_MAP[d]()
-            logger.info(f"✔ Domain completed: {d}")
+                    narrate(f"❌ Domain {d} failed: {e}")
 
+    else:
+        narrate("Running domains in SERIES mode")
+        for d in domains:
+            narrate(f"▶ Running domain: {d}")
+            DOMAIN_MAP[d]()
+            narrate(f"✔ Finished domain: {d}")
+
+
+# -----------------------------
+# ARGUMENTS
+# -----------------------------
 
 def parse_args():
-    p = argparse.ArgumentParser()
-    p.add_argument('--domain', '-d', default='ocean')   # default changed
-    p.add_argument('--parallel', '-p', action='store_true')
-    return p.parse_args()
+    parser = argparse.ArgumentParser(
+        description="Unified Marine Data Orchestrator"
+    )
+    parser.add_argument(
+        "--domain", "-d",
+        default="ocean",
+        help="Comma-separated list: ocean,fisheries,biodiversity"
+    )
+    parser.add_argument(
+        "--parallel", "-p",
+        action="store_true",
+        help="Run all selected domains in parallel"
+    )
+    return parser.parse_args()
 
+
+# -----------------------------
+# MAIN ENTRY
+# -----------------------------
 
 def main():
+    narrate("🔧 Initializing Orchestrator")
     args = parse_args()
-    dom = args.domain.lower()
 
-    # Only run ocean for now
-    if dom not in DOMAIN_MAP:
-        print("Currently only 'ocean' is available.")
-        sys.exit(1)
+    domains = [d.strip() for d in args.domain.split(",")]
+    for d in domains:
+        if d not in DOMAIN_MAP:
+            narrate(f"❌ Invalid domain: {d}")
+            sys.exit(1)
 
-    run_domains([dom], parallel=args.parallel)
+    narrate(f"Selected domains → {domains}")
+    run_domains(domains, parallel=args.parallel)
+
+    narrate("🎉 All pipelines completed successfully!")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
