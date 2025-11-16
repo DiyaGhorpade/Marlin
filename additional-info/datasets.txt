@@ -1,0 +1,14 @@
+Candidates for extracting more data for project
+
+Fisheries:
+https://www.fao.org/statistics/resources/en?indexCatalogue=search-index-statistics&wordsMode=AllWords&fallbacklang=en&topics=8d3d886d-3768-4d5e-9780-2a669d9afdd3&searchMode=all&contentTypes=FAOResources.FaoResourcesPublications&searchQuery=*:*
+https://www.fao.org/fishery/en/statistics/software/fishstatj
+https://dataexplorer.fao.org/?tm=indian%20ocean&pg=0&snb=2
+https://github.com/andrewjdyck/api.openfisheries.org
+
+Biodiversity:
+https://indobis.in/data/checklist
+https://obis.org/node/1a3b0f1a-4474-4d73-9ee1-d28f92a83996
+
+Cross Origin data:
+SensorThings API

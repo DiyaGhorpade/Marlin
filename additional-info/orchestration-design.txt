@@ -1,0 +1,18 @@
+/pipeline/
+    ocean/
+        ingest.py
+        clean.py
+        produce.py
+    fisheries/
+        ingest.py
+        clean.py
+        produce.py
+    biodiversity/
+        ingest.py
+        clean.py
+        produce.py
+    common/
+        schema_validation.py
+        kafka_utils.py
+        paths.py
+    orchestrator.py   <-- you will write this later
