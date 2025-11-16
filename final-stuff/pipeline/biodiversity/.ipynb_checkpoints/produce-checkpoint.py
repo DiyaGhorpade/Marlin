@@ -57,5 +57,5 @@ def produce(cleaned_path):
 
 
 if __name__ == "__main__":
-    cleaned_path = sys.argv[1] if len(sys.argv) > 1 else "/data/clean/biodiversity/cleaned_dwc.jsonl"
+    cleaned_path = sys.argv[1] if len(sys.argv) > 1 else "/data/clean/biodiversity/filtered_dwc.jsonl"
     produce(cleaned_path)

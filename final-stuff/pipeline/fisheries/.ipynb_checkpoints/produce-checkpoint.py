@@ -1,15 +1,13 @@
 import json
 import sys
+import os
 
 from pipeline.common.kafka_utils import get_producer
 from pipeline.common.schema_validation import validate_dwc
 
+
 KAFKA_TOPIC = "fisheries_data"
 
-
-# -------------------------------------------------
-# Initialize Kafka Producer
-# -------------------------------------------------
 print("Connecting to Kafka producer...")
 
 try:
@@ -20,53 +18,60 @@ except Exception as e:
     sys.exit(1)
 
 
-# -------------------------------------------------
-# Produce fisheries DWC messages
-# -------------------------------------------------
-def produce(cleaned_jsonl_path):
+def produce_file(path):
+    """Produce messages for a single cleaned JSONL file."""
     count = 0
+    print(f" → Reading cleaned file: {path}")
 
-    print(f"Reading cleaned fisheries data from: {cleaned_jsonl_path}")
-
-    with open(cleaned_jsonl_path, "r", encoding="utf-8") as f:
+    with open(path, "r", encoding="utf-8") as f:
         for line in f:
             if not line.strip():
                 continue
 
-            # Parse JSONL record
             try:
                 rec = json.loads(line)
             except json.JSONDecodeError:
                 print("Skipped malformed JSON line.")
                 continue
 
-            # Validate the DWC row
             try:
                 validate_dwc(rec)
             except Exception as e:
                 print("Skipped fisheries record:", e)
                 continue
 
-            # Send to Kafka
             try:
                 producer.send(KAFKA_TOPIC, rec)
                 count += 1
             except Exception as e:
                 print("Kafka send failed:", e)
 
-    producer.flush()
-    print(f"Sent {count} messages to Kafka topic '{KAFKA_TOPIC}'.")
-
+    print(f"   Sent {count} records from {os.path.basename(path)}")
     return count
 
 
-# -------------------------------------------------
-# Entry Point
-# -------------------------------------------------
+def produce_all(clean_dir):
+    """Scan directory and produce from all .jsonl files."""
+    total = 0
+
+    for fname in sorted(os.listdir(clean_dir)):
+        if fname.lower().endswith(".jsonl"):
+            fpath = os.path.join(clean_dir, fname)
+            total += produce_file(fpath)
+
+    producer.flush()
+    print(f"\nTotal messages sent to Kafka topic '{KAFKA_TOPIC}': {total}")
+    return total
+
+
 if __name__ == "__main__":
-    cleaned_jsonl_path = (
-        sys.argv[1]
-        if len(sys.argv) > 1
-        else "/data/clean/fisheries/cleaned_dwc.jsonl"
+    # default directory if no argument passed
+    clean_dir = (
+        sys.argv[1] if len(sys.argv) > 1 else "/data/clean/fisheries"
     )
-    produce(cleaned_jsonl_path)
+
+    if not os.path.isdir(clean_dir):
+        print(f"Error: {clean_dir} is not a directory.")
+        sys.exit(1)
+
+    produce_all(clean_dir)
