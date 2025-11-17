@@ -1,7 +1,6 @@
 from kafka import KafkaProducer
 import json
 import sys
-
 from pipeline.common.schema_validation import validate_ocean_row
 from pipeline.common.kafka_utils import get_producer
 

@@ -1,0 +1,16 @@
+kafdrop service: This defines the Kafdrop web UI.
+image: Uses the official obsidiandynamics/kafdrop:latest Docker image.
+ports: Maps port 9000, allowing you to access Kafdrop in your browser at http://localhost:9000.
+environment:
+KAFKA_BROKERCONNECT: This crucial variable tells Kafdrop how to connect to your Kafka brokers. In this setup, it points to the Kafka service within the Docker network (kafka:29092).
+JVM_OPTS: Optional JVM options for Kafdrop, like memory limits.
+depends_on: Ensures Kafka starts before Kafdrop.
+
+The WARN message "Couldn't resolve server kafka:29092 from bootstrap.servers as DNS resolution failed for kafka" indicates that your Kafka client is unable to resolve the hostname "kafka" to an IP address. This typically happens in environments where the hostname is not recognized by the DNS server or the local host's name resolution mechanisms.
+Common causes and solutions:
+Incorrect bootstrap.servers configuration:
+Issue: The bootstrap.servers setting in your Kafka client configuration specifies kafka:29092, but the hostname "kafka" is not resolvable within the network where your client is running.
+Solution: Ensure that the bootstrap.servers configuration uses an IP address or a resolvable hostname for your Kafka broker. For example, if your Kafka broker is running on 192.168.1.100, you would configure bootstrap.servers=192.168.1.100:29092.
+
+
+fixed by adding to same network

@@ -1,7 +1,8 @@
 version: '3.8'
 
 services:
-  # 1. Kafka in KRaft Mode (No Zookeeper!)
+
+  # 1. Kafka in KRaft Mode
   kafka:
     image: confluentinc/cp-kafka:7.8.3
     hostname: kafka
@@ -32,6 +33,7 @@ services:
     networks:
       - copernicus-net
 
+
   # 2. PostgreSQL
   postgres:
     image: postgres:15-alpine
@@ -48,12 +50,17 @@ services:
     networks:
       - copernicus-net
 
+
   # 3. Jupyter Lab Service
   jupyter-lab:
     build: .
     container_name: jupyter-lab
     ports:
       - "8888:8888"
+    environment:
+      OPENLINEAGE_URL: ${OPENLINEAGE_URL}
+      OPENLINEAGE_NAMESPACE: ${OPENLINEAGE_NAMESPACE}
+      OPENLINEAGE_API_KEY: ${OPENLINEAGE_API_KEY} 
     volumes:
       - .:/app
       - ./data:/data
@@ -64,6 +71,8 @@ services:
       - copernicus-net
     command: sh -c "dos2unix /app/start.sh && /app/start.sh"
 
+
+  # Consumer Containers
   consumer-biodiversity:
     build: .
     command: ["sh", "-c",
@@ -77,6 +86,7 @@ services:
     networks: [copernicus-net]
     restart: always
 
+
   consumer-fisheries:
     build: .
     command: ["sh", "-c",
@@ -89,6 +99,7 @@ services:
       - postgres
     networks: [copernicus-net]
     restart: always
+
 
   consumer-ocean:
     build: .
@@ -104,11 +115,61 @@ services:
     restart: always
 
 
+  # Kafka visualisation - Kafka UI
+  kafka-ui:
+    image: provectuslabs/kafka-ui
+    hostname: kafka-ui
+    container_name: kafka-ui
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+    depends_on:
+      - kafka
+    networks:
+      - copernicus-net
+
+
+# MArquez/Open Lineage for visualisation
+  marquez_db:
+    image: postgres:15
+    container_name: marquez_db
+    environment:
+      POSTGRES_USER: marquez
+      POSTGRES_PASSWORD: marquez
+      POSTGRES_DB: marquez
+    volumes:
+      - marquez_db_data:/var/lib/postgresql/data
+    networks:
+      - copernicus-net
+
+marquez:
+  image: marquezproject/marquez:latest
+  container_name: marquez
+  depends_on:
+    - marquez_db
+  ports:
+    - "3000:3000"   # UI
+    - "5000:5000"   # API endpoint (send lineage events here)
+  environment:
+    MARQUEZ_DB_HOST: marquez_db
+    MARQUEZ_DB_USER: marquez
+    MARQUEZ_DB_PASSWORD: marquez
+    MARQUEZ_DB: marquez
+    MARQUEZ_PORT: 5000
+    MARQUEZ_UI_PORT: 3000
+  networks:
+    - copernicus-net
+
+
 # Define the shared network
 networks:
   copernicus-net:
     driver: bridge
 
+
 # Define the volume for Postgres to save data
 volumes:
   postgres-data:
+  marquez_db_data:

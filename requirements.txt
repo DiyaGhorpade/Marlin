@@ -38,3 +38,6 @@ pdfplumber
 pytesseract 
 pdf2image 
 pillow
+
+# For kafka visualisation using Open Lineage
+openlineage-python

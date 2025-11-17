@@ -24,8 +24,8 @@ def ingest():
         maximum_longitude=95.10309461377467,
         minimum_latitude=3.1228444517411815,
         maximum_latitude=25.964845628380452,
-        start_datetime=datetime.now() - timedelta(days = 2),
-        end_datetime=datetime.now() - timedelta(days = 1),
+        start_datetime=datetime.now() - timedelta(days = 7), # changed for demo only
+        end_datetime=datetime.now() - timedelta(days = 6),
         minimum_depth=0.49402499198913574,
         maximum_depth=0.49402499198913574,
         output_filename=str(outfile)
