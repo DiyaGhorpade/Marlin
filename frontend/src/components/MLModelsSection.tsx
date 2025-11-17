@@ -29,18 +29,6 @@ const models = [
     ],
     link: "/ocean-predictor"
   },
-  {
-    name: "Ecosystem Health Monitor",
-    description: "ML model analyzing multiple indicators to assess marine ecosystem health in real-time",
-    accuracy: "96.8%",
-    icon: Zap,
-    gradient: "from-accent to-primary",
-    metrics: [
-      { label: "Indicators", value: "150+" },
-      { label: "Regions", value: "Global" },
-      { label: "Alerts", value: "Real-time" },
-    ],
-  },
 ];
 
 const MLModelsSection = () => {
