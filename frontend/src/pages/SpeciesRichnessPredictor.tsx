@@ -220,7 +220,6 @@ const SpeciesRichnessPredictor: React.FC = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">Quick Locations</label>
                   <div className="flex flex-wrap gap-2">
                     <button type="button" onClick={() => setLocation(19.0760, 72.8777)} className="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm">Mumbai</button>
-                    <button type="button" onClick={() => setLocation(28.6139, 77.2090)} className="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm">Delhi</button>
                     <button type="button" onClick={() => setLocation(13.0827, 80.2707)} className="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm">Chennai</button>
                     <button type="button" onClick={() => setLocation(15.2993, 74.1240)} className="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm">Goa</button>
                     <button type="button" onClick={() => setLocation(11.9416, 79.8083)} className="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm">Puducherry</button>
