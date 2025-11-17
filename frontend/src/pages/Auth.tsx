@@ -1,128 +1,119 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { Waves, Mail, Lock, User } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { Waves, Mail, Lock } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-import { z } from "zod";
 
-const emailSchema = z.string().trim().email({ message: "Invalid email address" }).max(255);
-const passwordSchema = z.string().min(6, { message: "Password must be at least 6 characters" }).max(72);
+// Store credentials in component state (in real app, this would be in backend/database)
+interface UserCredentials {
+  email: string;
+  password: string;
+}
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [emailError, setEmailError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [registeredUsers, setRegisteredUsers] = useState<UserCredentials[]>([]);
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  useEffect(() => {
-    // Check if user is already logged in
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        navigate("/");
-      }
-    });
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session) {
-        navigate("/");
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [navigate]);
-
-  const validateInputs = () => {
-    try {
-      emailSchema.parse(email);
-      passwordSchema.parse(password);
-      return true;
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        toast({
-          title: "Validation Error",
-          description: error.errors[0].message,
-          variant: "destructive",
-        });
-      }
-      return false;
-    }
+  const validateEmail = (email: string) => {
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return regex.test(email);
   };
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!validateInputs()) return;
+    setEmailError("");
+
+    if (!validateEmail(email)) {
+      setEmailError("Invalid email address");
+      return;
+    }
+
+    if (password.length < 6) {
+      toast({
+        title: "Error",
+        description: "Password must be at least 6 characters",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setLoading(true);
 
+    // Simulate API call delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
     try {
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
+        // Sign in logic - Check if user exists with matching credentials
+        const userExists = registeredUsers.find(
+          user => user.email === email && user.password === password
+        );
 
-        if (error) {
-          if (error.message.includes("Invalid login credentials")) {
-            toast({
-              title: "Login Failed",
-              description: "Invalid email or password. Please try again.",
-              variant: "destructive",
-            });
-          } else {
-            toast({
-              title: "Login Failed",
-              description: error.message,
-              variant: "destructive",
-            });
-          }
-        } else {
+        if (userExists) {
+          localStorage.setItem("token", "demo-token");
+          localStorage.setItem("userEmail", email);
           toast({
             title: "Welcome back!",
             description: "Successfully logged in.",
           });
-        }
-      } else {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/`,
-          },
-        });
-
-        if (error) {
-          if (error.message.includes("User already registered")) {
+          navigate("/");
+        } else {
+          // Check if email exists but password is wrong
+          const emailExists = registeredUsers.find(user => user.email === email);
+          if (emailExists) {
             toast({
-              title: "Account exists",
-              description: "This email is already registered. Please login instead.",
+              title: "Login Failed",
+              description: "Incorrect password",
               variant: "destructive",
             });
           } else {
             toast({
-              title: "Signup Failed",
-              description: error.message,
+              title: "Login Failed",
+              description: "No account found with this email",
               variant: "destructive",
             });
           }
+        }
+      } else {
+        // Sign up logic - Check if email already exists
+        const emailExists = registeredUsers.find(user => user.email === email);
+        
+        if (emailExists) {
+          toast({
+            title: "Signup Failed",
+            description: "An account with this email already exists",
+            variant: "destructive",
+          });
         } else {
+          // Register new user
+          const newUser: UserCredentials = { email, password };
+          setRegisteredUsers(prev => [...prev, newUser]);
+          
           toast({
             title: "Account created!",
-            description: "Successfully signed up. You can now log in.",
+            description: "Your account has been created successfully.",
           });
+          
+          // Switch to login after successful signup
           setIsLogin(true);
+          // Clear form
+          setEmail("");
+          setPassword("");
         }
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Auth Error:", error);
       toast({
         title: "Error",
-        description: "An unexpected error occurred. Please try again.",
+        description: "Something went wrong. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -154,11 +145,15 @@ const Auth = () => {
                 type="email"
                 placeholder="your@email.com"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setEmailError("");
+                }}
                 className="pl-10"
                 required
               />
             </div>
+            {emailError && <p className="text-destructive text-xs">{emailError}</p>}
           </div>
 
           <div className="space-y-2">
@@ -187,12 +182,27 @@ const Auth = () => {
 
         <div className="mt-6 text-center">
           <button
-            onClick={() => setIsLogin(!isLogin)}
+            onClick={() => {
+              setIsLogin(!isLogin);
+              setEmail("");
+              setPassword("");
+              setEmailError("");
+            }}
             className="text-sm text-muted-foreground hover:text-primary transition-colors"
           >
             {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
           </button>
         </div>
+
+        {/* Demo helper - show registered users in development */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="mt-4 p-2 bg-muted rounded text-xs">
+            <p className="font-medium">Demo Users ({registeredUsers.length}):</p>
+            {registeredUsers.map((user, index) => (
+              <p key={index}>{user.email}</p>
+            ))}
+          </div>
+        )}
       </Card>
     </div>
   );
