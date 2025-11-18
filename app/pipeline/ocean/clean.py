@@ -1,4 +1,5 @@
 import json
+import os
 import xarray as xr
 from datetime import datetime
 from pipeline.common.paths import CLEAN_PATH
@@ -9,7 +10,7 @@ def clean(nc_path):
     outdir.mkdir(parents=True, exist_ok=True)
 
     # Timestamped output file
-    timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     outfile = outdir / f"cleaned_{timestamp}.jsonl"
 
     try:
@@ -34,8 +35,12 @@ def clean(nc_path):
         with open(outfile, 'w', encoding='utf-8'):
             print("Cleaning failed.")
             pass
-
-    return str(outfile)
+    
+    if os.path.getsize(outfile):
+        return str(outfile)
+    
+    else:
+        print("Empty ocean file.")
 
 
 if __name__ == '__main__':

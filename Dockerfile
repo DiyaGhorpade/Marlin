@@ -49,9 +49,13 @@ RUN ln -s /usr/bin/python3 /usr/bin/python
 # Add a line to activate the virtual environment in ~/.bashrc
 RUN echo "source /myvenv/bin/activate" >> /root/.bashrc
 
-# Copy requirements
+# Copy requirements for python
 COPY requirements.txt .
+
+# Copy .env for credentials
 COPY .env .
+
+# Copy jupyter lab settings
 COPY jupyter-settings/ /root/.jupyter/lab/user-settings/
 
 # Ensure pip is compatible with the CUDA version
@@ -69,12 +73,12 @@ EXPOSE 8888
 # Copy the start script and make it executable
 COPY app/ /app/
 
-# Copy scripts
+# Copy start scripts
 COPY wait-for-kafka.sh /app/
 COPY wait-for-postgres.sh /app/
 COPY start.sh /app/
 
-
+# Make start scripts compatible and executable
 RUN dos2unix wait-for-kafka.sh && chmod +x wait-for-kafka.sh
 RUN dos2unix wait-for-postgres.sh && chmod +x wait-for-postgres.sh
 RUN dos2unix start.sh && chmod +x start.sh

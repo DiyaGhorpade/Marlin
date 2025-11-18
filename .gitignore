@@ -3,3 +3,6 @@
 .venv
 .marlin
 /data
+pg_hba.conf
+postgresql.conf
+/postgres-data

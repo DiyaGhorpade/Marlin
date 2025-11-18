@@ -5,7 +5,7 @@ source /myvenv/bin/activate
 
 echo "Starting orchestrator (will wait for Kafka)..."
 /app/wait-for-kafka.sh \
-  /myvenv/bin/python /app/app/orchestrator.py --domain ocean,fisheries,biodiversity
+  /myvenv/bin/python /app/app/orchestrator.py --domain ocean
 
 echo "Starting Jupyter Lab..."
 exec jupyter lab \
