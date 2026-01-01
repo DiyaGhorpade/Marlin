@@ -1,9 +1,3 @@
-#!/usr/bin/env python3
-"""
-Main script for Ocean Variable Prediction
-Works with the trained model structure that has no time parameters
-"""
-
 import pandas as pd
 import numpy as np
 import joblib
@@ -60,6 +54,9 @@ def find_available_port(start_port=8501, max_port=8510):
 DASHBOARD_PORT = None
 species_model_package = None
 ocean_model_package = None
+fish_stock_model = None
+fish_label_encoders = None
+
 
 def start_streamlit():
     """Start Streamlit dashboard"""
@@ -95,9 +92,45 @@ def start_streamlit():
         print(f"❌ Error starting Streamlit: {e}")
 
 def load_ml_models():
-    """Load both ML models"""
+    """Load all ML models"""
     global species_model_package, ocean_model_package
-    
+    global fish_stock_model, fish_label_encoders
+
+    # Load Fish Stock Model
+    try:
+        model_paths = [
+            'fish_catch_model_min.pkl',
+            './fish_catch_model_min.pkl',
+            '../fish_catch_model_min.pkl',
+            os.path.join(os.path.dirname(__file__), 'fish_catch_model_min.pkl'),
+        ]
+
+        encoder_paths = [
+            'encoders.pkl',
+            './encoders.pkl',
+            os.path.join(os.path.dirname(__file__), 'encoders.pkl'),
+        ]
+
+        for path in model_paths:
+            if os.path.exists(path):
+                fish_stock_model = joblib.load(path,mmap_mode="r")
+                print(f"Fish Stock Model loaded from: {path}")
+                break
+
+        for path in encoder_paths:
+            if os.path.exists(path):
+                fish_label_encoders = joblib.load(path)
+                print(f"Fish Label Encoders loaded from: {path}")
+                break
+
+        if fish_stock_model is None:
+            print("Fish Stock model not loaded")
+        if fish_label_encoders is None:
+            print("Fish Label Encoders not loaded")
+
+    except Exception as e:
+        print(f"❌ Error loading fish stock model: {e}")
+
     # Load species richness model
     try:
         possible_paths = [
@@ -161,6 +194,30 @@ def load_ml_models():
     except Exception as e:
         print(f"❌ Error loading ocean model: {e}")
 
+def encode_input(encoders, field: str, value: str):
+    """
+    Safely encode categorical inputs using trained encoders
+    """
+    try:
+        encoder = encoders[field]
+        if value not in encoder.classes_:
+            # Get available values for better error message
+            available = list(encoder.classes_[:5])  # Show first 5 examples
+            raise ValueError(
+                f"Unknown {field}: '{value}'. "
+                f"Available values include: {available}... "
+                f"(total {len(encoder.classes_)} options)"
+            )
+        return int(encoder.transform([value])[0])
+    except KeyError:
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Encoder for field '{field}' not found"
+        )
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
 # Pydantic models for prediction inputs
 class SpeciesPredictionInput(BaseModel):
     latitude: float
@@ -176,6 +233,12 @@ class OceanPredictionInput(BaseModel):
     depth: float
     uo: Optional[float] = 0.0  # Eastward current
     vo: Optional[float] = 0.0  # Northward current
+
+class FishStockPredictionInput(BaseModel):
+    PERIOD: int
+    Area: str
+    Country: str
+    Scientific_Name: str
 
 class SpeciesPredictionResponse(BaseModel):
     predicted_species_richness: int
@@ -194,6 +257,13 @@ class OceanPredictionResponse(BaseModel):
     inputs_used: dict
     predictions: dict
 
+class FishStockPredictionResponse(BaseModel):
+    predicted_value: float
+    inputs_used: dict
+    unit: str = "Metric Tonnes"
+    model_info: Optional[dict] = None
+
+
 # --- Dashboard Routes ---
 @app.get("/")
 def root():
@@ -202,10 +272,12 @@ def root():
         "status": "Marlin ML API is running 🐋", 
         "species_model_loaded": species_model_package is not None,
         "ocean_model_loaded": ocean_model_package is not None,
+        "fish_stock_model_loaded": fish_stock_model is not None,
         "dashboard": dashboard_info,
         "endpoints": {
             "species_prediction": "/predict/species-richness",
-            "ocean_prediction": "/predict/ocean-parameters", 
+            "ocean_prediction": "/predict/ocean-parameters",
+            "fish_stock_prediction": "/predict/fish-stock-predictor",
             "model_info": "/model/info",
             "health": "/health"
         }
@@ -226,6 +298,8 @@ def health_check():
         "status": "healthy", 
         "species_model_loaded": species_model_package is not None,
         "ocean_model_loaded": ocean_model_package is not None,
+        "fish_stock_model_loaded": fish_stock_model is not None,
+        "encoders_loaded": fish_label_encoders is not None,
         "api_version": "1.0.0",
         "dashboard_port": DASHBOARD_PORT,
         "dashboard_url": f"http://localhost:{DASHBOARD_PORT}" if DASHBOARD_PORT else "Not running"
@@ -394,12 +468,102 @@ def predict_ocean_parameters(input_data: OceanPredictionInput):
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Ocean prediction failed: {str(e)}")
 
+# --- Fish Stock Prediction ---
+@app.post("/predict/fish-stock-predictor", response_model=FishStockPredictionResponse)
+def predict_fish_stock(input_data: FishStockPredictionInput):
+    """
+    Predict fish stock quantity (metric tonnes) based on:
+    - PERIOD (year)
+    - Area (FAO fishing area)
+    - Country
+    - Scientific_Name (species)
+    
+    Model expects: [PERIOD, Area_enc, Country_enc, Scientific_Name_enc]
+    """
+    if fish_stock_model is None or fish_label_encoders is None:
+        raise HTTPException(
+            status_code=503, 
+            detail="Fish stock model or encoders not loaded. Check server logs."
+        )
+
+    try:
+        # Encode categorical inputs
+        area_enc = encode_input(fish_label_encoders, "Area", input_data.Area)
+        country_enc = encode_input(fish_label_encoders, "Country", input_data.Country)
+        species_enc = encode_input(
+            fish_label_encoders, "Scientific_Name", input_data.Scientific_Name
+        )
+
+        # Build model input (ORDER MATTERS: PERIOD, Area, Country, Scientific_Name)
+        X = np.array([[
+            input_data.PERIOD,
+            area_enc,
+            country_enc,
+            species_enc
+        ]])
+
+        print(f"🔧 Input features: PERIOD={input_data.PERIOD}, Area_enc={area_enc}, Country_enc={country_enc}, Species_enc={species_enc}")
+
+        # Predict
+        prediction = fish_stock_model.predict(X)[0]
+        
+        # Ensure non-negative prediction
+        prediction = max(0, prediction)
+
+        print(f"✅ Prediction: {prediction} MT")
+
+        return FishStockPredictionResponse(
+            predicted_value=round(float(prediction), 2),
+            inputs_used=input_data.dict(),
+            unit="Metric Tonnes",
+            model_info={
+                "features": ["PERIOD", "Area", "Country", "Scientific_Name"],
+                "encoded_values": {
+                    "Area": area_enc,
+                    "Country": country_enc,
+                    "Scientific_Name": species_enc
+                }
+            }
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Prediction error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Prediction failed: {str(e)}")
+
+
+# --- Get Available Values for Fish Stock Model ---
+@app.get("/fish-stock/available-values")
+def get_available_values():
+    """
+    Get all available values for categorical fields in fish stock model
+    """
+    if fish_label_encoders is None:
+        raise HTTPException(status_code=503, detail="Encoders not loaded")
+    
+    try:
+        return {
+            "areas": sorted(fish_label_encoders["Area"].classes_.tolist()),
+            "countries": sorted(fish_label_encoders["Country"].classes_.tolist()),
+            "species": sorted(fish_label_encoders["Scientific_Name"].classes_.tolist()),
+            "total_areas": len(fish_label_encoders["Area"].classes_),
+            "total_countries": len(fish_label_encoders["Country"].classes_),
+            "total_species": len(fish_label_encoders["Scientific_Name"].classes_)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get values: {str(e)}")
+
+
 # --- Model Info Endpoints ---
 @app.get("/model/info")
 def get_model_info():
     """Get information about all loaded ML models"""
     species_info = {}
     ocean_info = {}
+    fish_stock_info = {}
     
     if species_model_package is not None:
         species_info = {
@@ -430,9 +594,23 @@ def get_model_info():
                 "note": "Model loaded but structure not recognized"
             }
     
+    if fish_stock_model is not None and fish_label_encoders is not None:
+        fish_stock_info = {
+            "model_type": "Regression Model (Fish Stock Predictor)",
+            "features": ["PERIOD", "Area", "Country", "Scientific_Name"],
+            "output": "Fish stock quantity in Metric Tonnes",
+            "data_source": "FAO Indian Ocean Data",
+            "encoders": {
+                "areas": len(fish_label_encoders["Area"].classes_),
+                "countries": len(fish_label_encoders["Country"].classes_),
+                "species": len(fish_label_encoders["Scientific_Name"].classes_)
+            }
+        }
+    
     return {
         "species_richness_model": species_info,
-        "ocean_parameter_model": ocean_info
+        "ocean_parameter_model": ocean_info,
+        "fish_stock_model": fish_stock_info
     }
 
 # --- Test Endpoints ---
@@ -466,6 +644,20 @@ def test_ocean_prediction():
         vo=0.05
     )
     return predict_ocean_parameters(test_input)
+
+@app.get("/test/fish-stock-prediction")
+def test_fish_stock_prediction():
+    """Test endpoint for fish stock prediction with sample data"""
+    if fish_stock_model is None or fish_label_encoders is None:
+        raise HTTPException(status_code=503, detail="Fish stock model not loaded")
+    
+    test_input = FishStockPredictionInput(
+        PERIOD=2018,
+        Area="Indian Ocean, Eastern",
+        Country="India",
+        Scientific_Name="Katsuwonus pelamis"  # Skipjack tuna
+    )
+    return predict_fish_stock(test_input)
 
 # --- Dashboard Status ---
 @app.get("/dashboards/status")
@@ -502,7 +694,9 @@ def reload_models():
     return {
         "message": "Models reload attempted", 
         "species_model_loaded": species_model_package is not None,
-        "ocean_model_loaded": ocean_model_package is not None
+        "ocean_model_loaded": ocean_model_package is not None,
+        "fish_stock_model_loaded": fish_stock_model is not None,
+        "encoders_loaded": fish_label_encoders is not None
     }
 
 if __name__ == "__main__":

@@ -197,7 +197,7 @@ const SPECIES = [
 ];
 
 
-/* ---------- COMPONENT ---------- */
+
 const FishStockPredictor = () => {
   const [formData, setFormData] = useState({
     period: "",
@@ -229,7 +229,7 @@ const FishStockPredictor = () => {
 
       setPrediction(result.predicted_value);
     } catch {
-      setError("Prediction failed. Please check inputs.");
+      setError("Prediction failed. Enter correct inputs again.");
       setPrediction(null);
     } finally {
       setLoading(false);
