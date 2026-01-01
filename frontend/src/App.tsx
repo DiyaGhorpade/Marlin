@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
+
 import Home from "./pages/Home";
 import Chatbot from "./pages/Chatbot";
 import Dashboards from "./pages/Dashboards";
@@ -13,6 +14,7 @@ import NotFound from "./pages/NotFound";
 //Import ML Model pages 
 import SpeciesRichnessPredictor from './pages/SpeciesRichnessPredictor';
 import OceanPredictor from "./pages/OceanPredictor";
+import FishStockPredictor from "./pages/FishStockPredictor"; 
 
 // Import new dashboard pages
 import OceanographicDashboard from "./pages/OceanographicDashboard";
@@ -35,13 +37,16 @@ const App = () => (
           <Route path="/models" element={<Models />} />
           <Route path="/auth" element={<Auth />} />
 
-          {/* ✅ Custom Dashboard Pages */}
+          {/* Custom Dashboard Pages */}
           <Route path="/dashboards/oceanographic" element={<OceanographicDashboard />} />
           <Route path="/dashboards/fisheries" element={<FisheriesDashboard />} />
           <Route path="/dashboards/biodiversity" element={<MarineBiodiversityDashboard />} />
           {/*ML Model Pages*/}
           <Route path="/species-richness-predictor" element={<SpeciesRichnessPredictor />} />
           <Route path="/ocean-predictor" element={<OceanPredictor />} />
+          <Route path="/fish-stock-predictor" element={<FishStockPredictor />}
+       />
+
           {/* Catch-all route */}
           <Route path="*" element={<NotFound />} />
         </Routes>

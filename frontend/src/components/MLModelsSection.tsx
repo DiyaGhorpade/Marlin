@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Brain, Sparkles, Zap, Database, MapPin, Thermometer } from "lucide-react";
+import { Brain, Sparkles, Zap, Database, MapPin, Thermometer,Fish } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const models = [
@@ -19,15 +19,29 @@ const models = [
   },
   {
     name: "Ocean Parameter Predictor",
-    description: "Predicts sea temperature & salinity using Linear Regression",
+    description: "Linear Regression Model Predicting Ocean Temperature & Salinity Levels across Indian Ocean , Arabian Sea and Bay of Bengal",
     icon: Thermometer,
     gradient: "from-cyan-500 to-blue-600",
     metrics: [
 
       { label: "Algorithm", value: "Linear Regression" },
       { label: "Data Source", value: "Copernicus " },
+      {label: "R2 Score:",value:"0.96"}
     ],
     link: "/ocean-predictor"
+  },
+  {
+    name: "Fish Stock Quantity Predictor",
+    description: "Random Forest Regression Model Predicting Fish Stock levels in metric tonnes across Indian Ocean waters",
+    icon: Fish,
+    gradient: "from-cyan-500 to-blue-600",
+    metrics: [
+
+      { label: "Algorithm", value:"Random Forest Regression" },
+      { label: "Data Source", value: "Fisheries & Aquaculture Organization " },
+      {label: "R2 Score:",value:"0.9548"}
+    ],
+    link: "/fish-stock-predictor"
   },
 ];
 
@@ -79,12 +93,12 @@ const MLModelsSection = () => {
 
                   {model.link ? (
                     <Link to={model.link}>
-                      <Button className="w-full bg-gradient-ocean hover:opacity-90">
+                      <Button className="w-full bg-gradient-ocean hover:opacity-90 mt-4">
                         Explore Model
                       </Button>
                     </Link>
                   ) : (
-                    <Button className="w-full bg-gradient-ocean hover:opacity-90">
+                    <Button className="w-full bg-gradient-ocean hover:opacity-90 mt-10">
                       Explore Model
                     </Button>
                   )}
